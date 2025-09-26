@@ -219,8 +219,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
   );
 };
 export default function LLMChatFrontend({
-  uploadUrl = import.meta.env.VITE_TEMP_UPLOAD,
-  chatUrl = import.meta.env.VITE_TEMP_CHAT,
+  uploadUrl = import.meta.env.VITE_UPLOAD_URL,
+  chatUrl = import.meta.env.VITE_CHAT_URL,
   tokenLimit = 100000,
 }: {
   uploadUrl?: string;
