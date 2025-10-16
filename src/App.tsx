@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./index.css"
+import ReactMarkdown from "react-markdown";
+
 interface ChatMessage {
   role?:"user" | "assistant";
   content?: string;
@@ -88,7 +90,9 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
 
   const [query, setQuery] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [intent,setIntent]= useState("")
   const messageListRef = useRef<HTMLDivElement | null>(null);
+  const [toomany,settoomany]= useState(false);
 
   useEffect(() => {
     sessionStorage.setItem(CHAT_KEY, JSON.stringify(chatHistory));
@@ -115,27 +119,28 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
     onStatus("Waiting for response...");
 
     try {
-      const body = { query, chat_history: newHistory };
+      const body = { query, chat_history: newHistory,intent };
       const res = await fetch(chatUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
-      if (!res.ok) throw new Error(`Chat request failed: ${res.status}`);
-      
       const j = await res.json();
+
+      if(res.status==429){
+        alert(j.detail)
+        settoomany(true)
+      }
+
       const assistantText: string = j[0];
       const tokensUsed: number = Number(j[1]?? 0);
-
+      setIntent(j[2])
         
-
       const newTokenTotal = tokenCount + tokensUsed;
       setTokenCount(newTokenTotal);
 
-      const afterHistory = trimHistory([...newHistory, { role:"assistant", content:assistantText }]);
+      const afterHistory = trimHistory([...newHistory, { role:"assistant", content:assistantText !== undefined ? assistantText : "" }]);
       setChatHistory(afterHistory);
-
       if (newTokenTotal >= tokenLimit) {
         onStatus(`Token limit reached (>= ${tokenLimit}). Further queries blocked.`);
       } else {
@@ -175,10 +180,14 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
       <div ref={messageListRef} className="overflow-auto  rounded-lg p-3 mb-3  h-[65%]  bg-[rgb(29,29,29)] border border-gray-800">
         {chatHistory.length === 0 && <div className="text-sm text-white">No messages yet.</div>}
         {chatHistory.map((m, i) => (
-          <div key={i} className={`mb-3 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+          <div key={i} className={`mb-3 flex whitespace-pre-line ${m.role === "user" ? "justify-end" : "justify-start"}`}>
             {m.content !== undefined &&(
               <>
-                <div className={`inline-block p-2 rounded-md ${ m.role === "user" ? "bg-gray-600 text-white ml-[30%] " : "mr-[30%] bg-gray-900 text-white"}`}>{m.content}</div>
+                <div className={`inline-block p-2 rounded-md ${ m.role === "user" ? "bg-gray-600 text-white ml-[30%] " : "mr-[30%] bg-gray-900 text-white"}`}>
+               <ReactMarkdown>
+                {m.content}
+                </ReactMarkdown> 
+                </div>
               </>
             )}
           </div>
@@ -191,13 +200,13 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
           onKeyDown={onKeyDown}
           placeholder={tokenCount >= tokenLimit ? "Token limit reached — cannot send." : "Type your message and press Enter to send"}
           className="flex-1 border rounded p-2 h-20 resize-none bg-[#171717] text-white border-[rgb(100,100,100)]"
-          disabled={isSending || tokenCount >= tokenLimit}
+          disabled={isSending || tokenCount >= tokenLimit || toomany}
         />
         <div className="flex flex-col">
           <button
             className={`px-4 py-2 rounded mb-2 ${isSending || tokenCount >= tokenLimit ? "bg-gray-400" : "bg-green-600 text-white"}`}
             onClick={sendQuery}
-            disabled={isSending || tokenCount >= tokenLimit}
+            disabled={isSending || tokenCount >= tokenLimit || toomany}
           >
             {isSending ? "Sending..." : "Send"}
           </button>
