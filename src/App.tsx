@@ -37,14 +37,32 @@ const UploadForm: React.FC<UploadFormProps> = ({ uploadUrl, onStatus }) => {
         method: "POST",
         body: form,
       });
-      const statusmsg=await res.json();
-      if(res.status==400){
-        alert(statusmsg)
+      if(res.status!=503){
+
+        const statusmsg=await res.json();
+        if(res.status==400){
+          alert(statusmsg)
+        }
+        if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
+        onStatus("Upload successful.");
+      }else if(res.status==503){
+
+        uploadUrl=import.meta.env.VITE_UPLOAD_URL_2
+        const res2 = await fetch(uploadUrl, {
+        method: "POST",
+        body: form,
+       });
+
+       const statusmsg=await res2.json();
+        if(res2.status==400){
+          alert(statusmsg)
+        }
+        if (!res2.ok) throw new Error(`Upload failed: ${res.status}`);
+        onStatus("Upload successful.");
+     
       }
 
 
-      if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
-      onStatus("Upload successful.");
     } catch (err) {
       console.error(err);
       onStatus("Upload failed.");
@@ -125,26 +143,60 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const j = await res.json();
+      if(res.status!=503){
 
-      if(res.status==429){
-        alert(j.detail)
-        settoomany(true)
-      }
-
-      const assistantText: string = j[0];
-      const tokensUsed: number = Number(j[1]?? 0);
-      setIntent(j[2])
+        const j = await res.json();
         
-      const newTokenTotal = tokenCount + tokensUsed;
-      setTokenCount(newTokenTotal);
+        if(res.status==429){
+          alert(j.detail)
+          settoomany(true)
+        }
+        
+        const assistantText: string = j[0];
+        const tokensUsed: number = Number(j[1]?? 0);
+        setIntent(j[2])
+        
+        const newTokenTotal = tokenCount + tokensUsed;
+        setTokenCount(newTokenTotal);
+        
+        const afterHistory = trimHistory([...newHistory, { role:"assistant", content:assistantText !== undefined ? assistantText : "" }]);
+        setChatHistory(afterHistory);
+        if (newTokenTotal >= tokenLimit) {
+          onStatus(`Token limit reached (>= ${tokenLimit}). Further queries blocked.`);
+        } else {
+          onStatus(`Response received. Tokens used: ${tokensUsed}`);
+        }
+      }else if(res.status==503){
+        chatUrl=import.meta.env.VITE_CHAT_URL_2
+        const res2 = await fetch(chatUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        });
+        const j = await res2.json();
+        
+        if(res2.status==429){
+          alert(j.detail)
+          settoomany(true)
+        }
+        
+        const assistantText: string = j[0];
+        const tokensUsed: number = Number(j[1]?? 0);
+        setIntent(j[2])
+        
+        const newTokenTotal = tokenCount + tokensUsed;
+        setTokenCount(newTokenTotal);
+        
+        const afterHistory = trimHistory([...newHistory, { role:"assistant", content:assistantText !== undefined ? assistantText : "" }]);
+        setChatHistory(afterHistory);
+        if (newTokenTotal >= tokenLimit) {
+          onStatus(`Token limit reached (>= ${tokenLimit}). Further queries blocked.`);
+        } else {
+          onStatus(`Response received. Tokens used: ${tokensUsed}`);
+        }
+        
 
-      const afterHistory = trimHistory([...newHistory, { role:"assistant", content:assistantText !== undefined ? assistantText : "" }]);
-      setChatHistory(afterHistory);
-      if (newTokenTotal >= tokenLimit) {
-        onStatus(`Token limit reached (>= ${tokenLimit}). Further queries blocked.`);
-      } else {
-        onStatus(`Response received. Tokens used: ${tokensUsed}`);
+
       }
 
       setQuery("");
