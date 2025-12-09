@@ -57,7 +57,7 @@ const UploadForm: React.FC<UploadFormProps> = ({ uploadUrl, onStatus }) => {
       <input ref={fileInputRef} type="file" className="block w-full mb-2 text-white" />
       <input
         value={uploadCategory}
-        onChange={(e) => setUploadCategory(e.target.value)}
+        onChange={(e) => setUploadCategory(e.target.value.toLowerCase())}
         placeholder="Category"
         className="w-full mb-2 input border p-2 rounded text-white bg-[#171717]"
       />
@@ -228,8 +228,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
   );
 };
 export default function LLMChatFrontend({
-  uploadUrl = import.meta.env.VITE_UPLOAD_URL,
-  chatUrl = import.meta.env.VITE_CHAT_URL,
+  uploadUrl = import.meta.env.VITE_TEMP_UPLOAD,
+  chatUrl = import.meta.env.VITE_TEMP_CHAT,
   tokenLimit = 100000,
 }: {
   uploadUrl?: string;
