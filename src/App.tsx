@@ -57,7 +57,8 @@ async function handledelete(e: React.FormEvent) {
     if(confirm("Are You Sure You Want to Clear All Colletion?")){
     try{
       const resp= await fetch(deleteUrl,{method:"POST",headers:{ "Content-Type":"text/plain"} ,body: "Yes"})
-      onStatus("Delete Successfull");
+      if(resp.ok){
+      onStatus("Delete Successfull");}
     }
     catch(err){
       console.log(err);
@@ -265,7 +266,7 @@ export default function LLMChatFrontend({
 }: {
   uploadUrl?: string;
   chatUrl?: string;
-  deleteUrl:string;
+  deleteUrl?:string;
   tokenLimit?: number;
 }) {
   const [statusMessage, setStatusMessage] = useState("");
