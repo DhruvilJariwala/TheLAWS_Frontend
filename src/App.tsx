@@ -9,10 +9,12 @@ interface ChatMessage {
 
 interface UploadFormProps {
   uploadUrl: string;
+  deleteUrl: string;
   onStatus: (msg: string) => void;
+  documentid: string[];
 }
 
-const UploadForm: React.FC<UploadFormProps> = ({ uploadUrl, onStatus }) => {
+const UploadForm: React.FC<UploadFormProps> = ({ uploadUrl,deleteUrl,documentid, onStatus }) => {
   const [uploadCategory, setUploadCategory] = useState("");
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -50,6 +52,18 @@ const UploadForm: React.FC<UploadFormProps> = ({ uploadUrl, onStatus }) => {
       onStatus("Upload failed.");
     }
   }
+async function handledelete(e: React.FormEvent) {
+    e.preventDefault();
+    if(confirm("Are You Sure You Want to Clear All Colletion?")){
+    try{
+      const resp= await fetch(deleteUrl,{method:"POST",headers:{ "Content-Type":"text/plain"} ,body: "Yes"})
+      onStatus("Delete Successfull");
+    }
+    catch(err){
+      console.log(err);
+      onStatus("Upload Failed");
+    }}
+  }
 
   return (
     <form onSubmit={handleUpload} className="left  rounded-lg p-4 shadow-sm bg-[#171717] h-[80%] ">
@@ -64,6 +78,15 @@ const UploadForm: React.FC<UploadFormProps> = ({ uploadUrl, onStatus }) => {
       <button className="bg-blue-600  text-white px-3 py-2 rounded" type="submit">
         Upload
       </button>
+         <button className="bg-red-600 px-3 py-2 text-white ml-3 rounded" onClick={handledelete} >
+        Delete
+      </button>
+      <h3 className="text-white mt-24">Files Picked</h3>
+        <ul className="text-white">
+          {documentid.map((id, i) => (
+            <li key={i}>{id}</li>
+          ))}
+        </ul>
     </form>
   );
 };
@@ -73,9 +96,12 @@ interface ChatBoxProps {
   tokenLimit: number;
   sessionId: string;
   onStatus: (msg: string) => void;
+  documentid: string[];
+  setdocumentid: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
-const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onStatus }) => {
+
+const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId,setdocumentid, onStatus }) => {
   const CHAT_KEY = `chat_history_${sessionId}`;
   const TOK_KEY = `token_count_${sessionId}`;
 
@@ -135,6 +161,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
       const assistantText: string = j[0];
       const tokensUsed: number = Number(j[1]?? 0);
       setIntent(j[2])
+      setdocumentid(j[3])
         
       const newTokenTotal = tokenCount + tokensUsed;
       setTokenCount(newTokenTotal);
@@ -172,12 +199,13 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
     <div className="rounded-lg shadow-sm h-screen">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium text-white">Chat</h3>
+        <h3 className="font-medium text-white">Current Intent: {intent}</h3>
         <div className="text-sm text-white">
           Tokens used: <strong>{tokenCount}</strong> • Remaining: <strong>{remaining}</strong>
         </div>
       </div>
 
-      <div ref={messageListRef} className="overflow-auto  rounded-lg p-3 mb-3  h-[65%]  bg-[rgb(29,29,29)] border border-gray-800">
+      <div ref={messageListRef} className="overflow-auto  rounded-lg p-3 mb-3  h-[65%]  bg-[rgb(40,40,40)] border border-gray-800">
         {chatHistory.length === 0 && <div className="text-sm text-white">No messages yet.</div>}
         {chatHistory.map((m, i) => (
           <div key={i} className={`mb-3 flex whitespace-pre-line ${m.role === "user" ? "justify-end" : "justify-start"}`}>
@@ -217,6 +245,8 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
                 setChatHistory([]);
                 setTokenCount(0);
                 onStatus("Session cleared.");
+                setIntent("")
+                setdocumentid([])
               }
             }}
           >
@@ -230,13 +260,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId, onSta
 export default function LLMChatFrontend({
   uploadUrl = import.meta.env.VITE_UPLOAD_URL,
   chatUrl = import.meta.env.VITE_CHAT_URL,
+  deleteUrl= import.meta.env.VITE_DELETE_URL,
   tokenLimit = 100000,
 }: {
   uploadUrl?: string;
   chatUrl?: string;
+  deleteUrl:string;
   tokenLimit?: number;
 }) {
   const [statusMessage, setStatusMessage] = useState("");
+  const [documentid, setdocumentid] = useState<string[]>([]);
   const [sessionId] = useState(() => {
     let id = sessionStorage.getItem("llm_session_id");
     if (!id) {
@@ -253,9 +286,9 @@ export default function LLMChatFrontend({
       <div className="text-sm  mt-2 text-white">{statusMessage}</div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 ">
-        <UploadForm uploadUrl={uploadUrl} onStatus={setStatusMessage} />
+        <UploadForm uploadUrl={uploadUrl} deleteUrl={deleteUrl}  documentid={documentid} onStatus={setStatusMessage} />
         <div className="col-span-2">
-          <ChatBox chatUrl={chatUrl} tokenLimit={tokenLimit} sessionId={sessionId} onStatus={setStatusMessage} />
+          <ChatBox chatUrl={chatUrl} tokenLimit={tokenLimit} sessionId={sessionId} documentid={documentid} setdocumentid={setdocumentid} onStatus={setStatusMessage} />
         </div>
       </div>
 
