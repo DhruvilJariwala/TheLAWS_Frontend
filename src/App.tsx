@@ -117,7 +117,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId,setdoc
 
   const [query, setQuery] = useState("");
   const [isSending, setIsSending] = useState(false);
-  const [intent,setIntent]= useState("")
+  const [intent,setIntent]= useState("order")
   const messageListRef = useRef<HTMLDivElement | null>(null);
   const [toomany,settoomany]= useState(false);
 
@@ -200,7 +200,16 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId,setdoc
     <div className="rounded-lg shadow-sm h-screen">
       <div className="flex justify-between items-center mb-2">
         <h3 className="font-medium text-white">Chat</h3>
-        <h3 className="font-medium text-white">Current Intent: {intent}</h3>
+        <h3 className="font-medium text-white">Intent:
+        <select
+      className="ml-2 rounded-md bg-gray-800 text-white text-sm px-2 py-1 outline-none border border-gray-600"
+      onChange={(e) => setIntent(e.target.value)}
+      value={intent}
+      >
+      <option value="order">Order</option>
+      <option value="act">Act</option>
+    </select>
+      </h3>
         <div className="text-sm text-white">
           Tokens used: <strong>{tokenCount}</strong> • Remaining: <strong>{remaining}</strong>
         </div>
@@ -246,7 +255,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId,setdoc
                 setChatHistory([]);
                 setTokenCount(0);
                 onStatus("Session cleared.");
-                setIntent("")
+                setIntent("order")
                 setdocumentid([])
               }
             }}
