@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./index.css"
-import ReactMarkdown from "react-markdown";
 
 interface ChatMessage {
   role?:"user" | "assistant";
@@ -83,11 +82,7 @@ async function handledelete(e: React.FormEvent) {
         Delete
       </button>
       <h3 className="text-white mt-24">Files Picked</h3>
-        <ul className="text-white">
-          {documentid.map((id, i) => (
-            <li key={i}>{id}</li>
-          ))}
-        </ul>
+        <ul className="text-white"> {documentid && documentid.map((id, i) => ( <li key={i}>{id}</li> ))} </ul>
     </form>
   );
 };
@@ -161,7 +156,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId,setdoc
 
       const assistantText: string = j[0];
       const tokensUsed: number = Number(j[1]?? 0);
-      setIntent(j[2])
+      setIntent(j[2]?? "order")
       setdocumentid(j[3])
         
       const newTokenTotal = tokenCount + tokensUsed;
@@ -222,9 +217,7 @@ const ChatBox: React.FC<ChatBoxProps> = ({ chatUrl, tokenLimit, sessionId,setdoc
             {m.content !== undefined &&(
               <>
                 <div className={`inline-block p-2 rounded-md ${ m.role === "user" ? "bg-gray-600 text-white ml-[30%] " : "mr-[30%] bg-gray-900 text-white"}`}>
-               <ReactMarkdown>
                 {m.content}
-                </ReactMarkdown> 
                 </div>
               </>
             )}
