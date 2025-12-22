@@ -82,7 +82,7 @@ async function handledelete(e: React.FormEvent) {
         Delete
       </button>
       <h3 className="text-white mt-24">Files Picked</h3>
-        <ul className="text-white"> {documentid && documentid.map((id, i) => ( <li key={i}>{id}</li> ))} </ul>
+        <ul className="text-white">{Array.isArray(documentid) && documentid.map((id) => (<li key={id}>{id}</li>))}</ul>
     </form>
   );
 };
